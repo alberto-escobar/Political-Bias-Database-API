@@ -15,8 +15,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 const { Pool } = require('pg');
 const { url } = require('inspector');
 
-//DEVELOPEMENT Database
-//connect to local postgres database
+//DEVELOPEMENT Database connection information.
 const DEVpool = new Pool({
     user: 'postgres',
     host: 'localhost',
@@ -25,38 +24,31 @@ const DEVpool = new Pool({
     port: 5432,
   })
 
-//PRODUCTION Database
-//connect to heroku postgres database
+//PRODUCTION Database connection information.
 const PRODpool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
-const pool = DEVpool; //set this to either DEVpool during production or PRODpool when deploying to production
+//set this to either DEVpool during production or PRODpool when deploying to production.
+const pool = DEVpool; 
 
+//global variables to help monitor the webscrapping.
 var errors = [];
 var ASStatus = false;
 var MBFCStatus = false;
 
-//start the app
-
+//start the app.
 app.listen(PORT, () => console.log(`server running on PORT ${PORT}`))
 
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-//allsides.com webscrapping
+//allsides.com webscrapping script.
 
 var allsidesProfiles = []
 var allsidesDatabase = []
 
-//main function to call to intiate updating
+//main function to call to intiate allsides.com webscrapping.
 function updateASDatabase(){
     ASStatus = true;
     allsidessearchpages = []
@@ -67,7 +59,7 @@ function updateASDatabase(){
     gatherASProfiles(allsidessearchpages)
 }
 
-//This function will go through all search pages on allsides.com and extract the listed profiles.
+//This function will go through all search pages on allsides.com for profiles with ratings and extract the listed profiles.
 function gatherASProfiles(array){
     const url =  array.shift();
     if(url){
@@ -114,7 +106,7 @@ function gatherASProfiles(array){
     }
 }
 
-//This function will go through all the profiles gathered and collect information on each profile page.
+//This function will go through all the gathered profiles and collect more information on each profile page.
 function crawlAS(profilesarray){
     if (profilesarray.length == 0){
         saveArrayToAllsidesDatabase(allsidesDatabase)
@@ -171,7 +163,7 @@ function crawlAS(profilesarray){
 
 }
 
-//saves allsides data to postgres database.
+//saves allsides data to allsides database (postgres).
 function saveArrayToAllsidesDatabase(array){
     pool.query(`DELETE FROM allsides`, (err, result)=>{
         if(err){
@@ -197,19 +189,12 @@ function saveArrayToAllsidesDatabase(array){
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-//mediabiasfactcheck.com webscrapping
+//mediabiasfactcheck.com webscrapping script.
 
 var MBFCProfiles = [];
 var MBFCDatabase = [];
 
-//main function to call to intiate updating
+//Main function to call to intiate mediabiasfactcheck.com webscrapping.
 function updateMBFCDatabase(){
     MBFCStatus = true;
     const MBFCCategories = [
@@ -226,7 +211,7 @@ function updateMBFCDatabase(){
     gatherMBFCProfiles(MBFCCategories)
 }
 
-//This function will go through all the category on mediabiasfactcheck and extract the listed profiles.
+//This function will go through all the category pages on mediabiasfactcheck.com and extract the listed profiles.
 function gatherMBFCProfiles(categories) {
     var category = categories.shift()
     console.log("obtaining profiles from " + category);
@@ -260,7 +245,7 @@ function gatherMBFCProfiles(categories) {
 }
 
 
-//This function will go through all the profiles gathered and collect information on each profile page.
+//This function will go through all the gathered profiles and collect information on each profile page.
 function crawlMBFC(profiles){
     if (profiles.length == 0){
         return 0;
@@ -328,7 +313,7 @@ function crawlMBFC(profiles){
 
 }
 
-//fixes factual data in MBFC data
+//Fixes factual data in profile data from mediabiasfactcheck.com.
 function fixFactual(a){
     if(a == "Veryhigh"){
         return "very high"
@@ -359,7 +344,7 @@ function fixFactual(a){
     }
 }
 
-//saves MBFC data to postgres database.
+//saves mediabiasfactcheck.com data to mbfc database (postgres).
 function saveArrayToMBFCDatabase(array){
     pool.query(`DELETE FROM mbfc`, (err, result)=>{
         if(err){
@@ -384,13 +369,6 @@ function saveArrayToMBFCDatabase(array){
     MBFCStatus = false;
 }
 
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
@@ -431,8 +409,8 @@ app.get('/', (req, res) => {
 /**
  * GET /update
  * Summary: Triggers updating of the databases, the API will execute the webscrapping algorithm. 
- * This takes two minutes to complete due to the amount of requests made to allsides.com.
- * This will return a message stating the database is being updated.
+ * This takes 30 minutes to complete due to the amount of requests made to both websites.
+ * If this function is called during updating, a message indicating that the databases are undergoing updating will be returned.
  */
 app.get('/update', (req, res) => {
     if(ASStatus || MBFCStatus){
@@ -447,7 +425,7 @@ app.get('/update', (req, res) => {
 
 /**
  * GET /errors
- * Summary: Returns the errors array. Errors are recorded if any HTTP request  fails.
+ * Summary: Returns the errors array. Errors are recorded if any HTTP request fails.
  */
  app.get('/errors', (req, res) => {
     res.json(errors);
@@ -493,10 +471,6 @@ app.get('/MBFCdata', (req, res) => {
         }
     });
 })
-
-
-
-
 
 ///API ENDPOINTS FOR EXTENSION
 /**
