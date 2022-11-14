@@ -1,4 +1,4 @@
-const PORT = process.env.PORT || 8000;
+const PORT = process.env.PORT || 8080;
 
 const express = require('express');
 const app = express();
@@ -14,7 +14,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 const { Pool } = require('pg');
 const { url } = require('inspector');
-
+//lol
 //DEVELOPEMENT Database connection information.
 const DEVpool = new Pool({
     user: 'postgres',
@@ -30,7 +30,7 @@ const PRODpool = new Pool({
 });
 
 //set this to either DEVpool during production or PRODpool when deploying to production.
-const pool = DEVpool; 
+const pool = PRODpool; 
 
 //global variables to help monitor the webscrapping.
 var errors = [];
